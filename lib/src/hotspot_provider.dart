@@ -291,6 +291,7 @@ class HotspotProviderState extends State<HotspotProvider>
                       return PaintBoundsBuilder(
                         builder: (context, paintBounds) {
                           final delegate = CalloutLayoutDelegate(
+                            context: context,
                             tailSize: widget.tailSize,
                             tailInsets: widget.tailInsets,
                             paintBounds: paintBounds,
