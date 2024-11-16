@@ -398,16 +398,15 @@ class HotspotProviderState extends State<HotspotProvider>
 
                       /// Absorb tap events so we don't dismiss when tapping on the callout body.
                       /// Without this, the tap event is passed through to the skrim GestureDetector
-                      child: DecoratedBox(
-                        decoration: ShapeDecoration.fromBoxDecoration(
-                          currentTarget.widget.boxDecoration?.color == null
-                              ? BoxDecoration(
-                                  color: bg,
-                                )
-                              : currentTarget.widget.boxDecoration!,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          decoration:
+                              currentTarget.widget.boxDecoration?.color == null
+                                  ? BoxDecoration(
+                                      color: bg,
+                                    )
+                                  : currentTarget.widget.boxDecoration,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
