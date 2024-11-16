@@ -256,22 +256,32 @@ class CalloutLayoutInfo {
 /// Utility extension for rect translation
 extension RectTranslationExtension on Rect {
   /// Translate this Rect horizontally to fit inside another Rect
+  /// Translate this Rect horizontally to fit inside another Rect with more flexible handling
   Rect translateToFitX(Rect container) {
-    assert(width <= container.width,
-        'Container Rect must be wider than this Rect');
+    // If the current rect is wider than the container, adjust proportionally
+    if (width > container.width) {
+      // Calculate scale factor to fit width
+      final scaleFactor = container.width / width;
 
-    // Overhang on the right
-    if (container.right < right) {
-      return translate(-(container.right - right).abs(), 0);
+      // Create new rect scaled to container width
+      return Rect.fromCenter(
+              center: center,
+              width: container.width,
+              height: height * scaleFactor)
+          .translate(container.left - left, 0);
     }
-    // Overhang on the left
-    else if (container.left > left) {
-      return translate((container.left - left).abs(), 0);
+
+    // Calculate horizontal translation
+    double translationX = 0;
+    if (left < container.left) {
+      // Shift right if left edge is outside container
+      translationX = container.left - left;
+    } else if (right > container.right) {
+      // Shift left if right edge is outside container
+      translationX = container.right - right;
     }
-    // No overhang
-    else {
-      return this;
-    }
+
+    return translate(translationX, 0);
   }
 }
 
