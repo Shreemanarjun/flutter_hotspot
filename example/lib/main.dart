@@ -97,10 +97,8 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.headlineMedium,
             ).withCustomHotspot(
               order: 2,
-              showCaseWidget: Container(
-                child: const Text(
-                  'This is the number of times you\'ve smashed the like button',
-                ),
+              showCaseWidget: const Text(
+                'This is the number of times you\'ve smashed the like button',
               ),
             ),
           ],
