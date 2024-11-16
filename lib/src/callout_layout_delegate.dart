@@ -13,6 +13,7 @@ class CalloutLayoutDelegate {
     required this.bodyWidth,
     required this.hotspotSize,
     required this.hotspotOffset,
+    required this.boxDecoration,
   });
 
   /// The boundary of the viewport where targets will be found.
@@ -41,6 +42,9 @@ class CalloutLayoutDelegate {
 
   /// A custom offset for the hotspot center.
   final Offset hotspotOffset;
+
+  /// BoxDecoration for border of call out body
+  final BoxDecoration? boxDecoration;
 
   /// The bounding rectacle for the hotspot
   Rect get hotspotBounds {

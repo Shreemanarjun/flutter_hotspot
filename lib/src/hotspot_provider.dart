@@ -300,6 +300,7 @@ class HotspotProviderState extends State<HotspotProvider>
                             bodyWidth: widget.bodyWidth,
                             hotspotSize: currentTarget.widget.hotspotSize,
                             hotspotOffset: currentTarget.widget.hotspotOffset,
+                            boxDecoration: currentTarget.widget.boxDecoration,
                           );
 
                           return buildHotspotAndCallout(
@@ -397,39 +398,44 @@ class HotspotProviderState extends State<HotspotProvider>
                       /// Absorb tap events so we don't dismiss when tapping on the callout body.
                       /// Without this, the tap event is passed through to the skrim GestureDetector
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          decoration: BoxDecoration(color: bg),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              /// Callout body
-                              Padding(
-                                padding: widget.bodyPadding,
-                                child: AnimatedSize(
-                                  duration: widget.duration,
-                                  alignment: Alignment.topCenter,
-                                  curve: widget.curve,
-                                  child: currentTarget.widget.calloutBody,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            decoration:
+                                currentTarget.widget.boxDecoration?.color ==
+                                        null
+                                    ? BoxDecoration(
+                                        color: bg,
+                                      )
+                                    : currentTarget.widget.boxDecoration,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                /// Callout body
+                                Padding(
+                                  padding: widget.bodyPadding,
+                                  child: AnimatedSize(
+                                    duration: widget.duration,
+                                    alignment: Alignment.topCenter,
+                                    curve: widget.curve,
+                                    child: currentTarget.widget.calloutBody,
+                                  ),
                                 ),
-                              ),
 
-                              /// Callout controls
-                              actionBuilder(
-                                context,
-                                CalloutActionController(
-                                  dismiss: dismiss,
-                                  next: next,
-                                  previous: previous,
-                                  index: _index,
-                                  pages: currentFlow.length,
-                                  foregroundColor: fg,
+                                /// Callout controls
+                                actionBuilder(
+                                  context,
+                                  CalloutActionController(
+                                    dismiss: dismiss,
+                                    next: next,
+                                    previous: previous,
+                                    index: _index,
+                                    pages: currentFlow.length,
+                                    foregroundColor: fg,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                              ],
+                            ),
+                          )),
                     ),
                   );
                 },

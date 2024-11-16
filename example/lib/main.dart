@@ -1,3 +1,4 @@
+import 'package:example/custom_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:hotspot/hotspot.dart';
 
@@ -59,10 +60,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('hotspot').withHotspot(
+        title: const Text('hotspot').withCustomHotspot(
           order: 1,
-          title: "Let's get started!",
-          text: "We're going to give you an example tour with hotspot",
+          showCaseWidget: const Text(
+              "We're going to give you an example tour with hotspot"),
+          boxDecoration: BoxDecoration(
+            color: Colors.red.withOpacity(
+              0.6,
+            ),
+            borderRadius: BorderRadius.circular(0),
+          ),
         ),
         actions: [
           IconButton(
@@ -88,11 +95,13 @@ class _MyHomePageState extends State<MyHomePage> {
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
-            ).withHotspot(
+            ).withCustomHotspot(
               order: 2,
-              title: 'Count It!',
-              text:
+              showCaseWidget: Container(
+                child: const Text(
                   'This is the number of times you\'ve smashed the like button',
+                ),
+              ),
             ),
           ],
         ),
