@@ -1,153 +1,440 @@
 import 'package:flutter/widgets.dart';
 
 class CalloutLayoutDelegate {
+  /// Comprehensive layout delegate for callout positioning
   CalloutLayoutDelegate({
+    required this.context,
     required this.paintBounds,
     required this.targetBounds,
-    required this.hotspotPadding,
-    required this.tailSize,
-    required this.tailInsets,
-    required this.bodyMargin,
-    required this.bodyWidth,
-    required this.hotspotSize,
-    required this.hotspotOffset,
-    required this.boxDecoration,
-    required this.context,
-  });
-
-  final Rect paintBounds;
-  final Rect targetBounds;
-  final EdgeInsets hotspotPadding;
-  final EdgeInsets tailInsets;
-  final Size tailSize;
-  final EdgeInsets bodyMargin;
-  final double bodyWidth;
-  final Size? hotspotSize;
-  final Offset hotspotOffset;
-  final BoxDecoration? boxDecoration;
-  final BuildContext context;
-
-  // Cached values for performance
-  late final bool targetIsAboveCenter =
-      targetBounds.center.dy < paintBounds.height / 2;
-  late final Rect _deflatedPaintBounds = bodyMargin.deflateRect(paintBounds);
-
-  Rect get hotspotBounds {
-    if (hotspotSize != null) {
-      return _calculateHotspotBoundsWithSize();
-    } else {
-      return _calculateHotspotBoundsForDevice();
-    }
-  }
-
-  Rect _calculateHotspotBoundsWithSize() {
-    return hotspotPadding.inflateRect(
-      Rect.fromCenter(
-        center: targetBounds.center.translate(
-          hotspotOffset.dx,
-          hotspotOffset.dy,
-        ),
-        width: hotspotSize!.width,
-        height: hotspotSize!.height,
-      ),
+    this.hotspotPadding = EdgeInsets.zero,
+    this.tailInsets = EdgeInsets.zero,
+    this.tailSize = const Size(20, 10),
+    this.bodyMargin = const EdgeInsets.all(16),
+    this.bodyWidth = 250.0,
+    this.hotspotSize,
+    this.hotspotOffset = Offset.zero,
+    this.boxDecoration,
+  }) {
+    // Create positioning context
+    _positioningContext = CalloutPositioningContext(
+      context: context,
+      paintBounds: paintBounds,
+      targetBounds: targetBounds,
     );
   }
 
-  Rect _calculateHotspotBoundsForDevice() {
-    final double devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-    final Size screenSize = MediaQuery.sizeOf(context);
-    final bool isTablet = _isTablet(screenSize);
-    final bool hasNotch = _hasNotch(context);
+  /// Build context for additional layout calculations
+  final BuildContext context;
 
-    // Adjust target bounds based on device characteristics
-    Rect adjustedTargetBounds = targetBounds.shift(hotspotOffset);
+  /// The boundary of the viewport where targets will be found
+  final Rect paintBounds;
 
-    if (isTablet) {
-      // Increase padding for tablets
-      adjustedTargetBounds = adjustedTargetBounds.inflate(20.0);
-    }
+  /// The global boundary of the target to hotspot
+  final Rect targetBounds;
 
-    if (hasNotch) {
-      // Additional adjustment for notched devices
-      adjustedTargetBounds = adjustedTargetBounds.inflate(15.0);
-    }
+  /// Positioning context for advanced calculations
+  late final CalloutPositioningContext _positioningContext;
 
-    if (devicePixelRatio > 2.0) {
-      // Extra padding for high-density screens
-      adjustedTargetBounds = adjustedTargetBounds.inflate(10.0);
-    }
+  /// The hotspot padding
+  final EdgeInsets hotspotPadding;
 
-    return hotspotPadding.inflateRect(adjustedTargetBounds);
+  /// The margin between the hotspot and the tail
+  final EdgeInsets tailInsets;
+
+  /// The size of the callout tail
+  final Size tailSize;
+
+  /// The margin between the callout body and the viewport
+  final EdgeInsets bodyMargin;
+
+  /// The width of the callout body
+  final double bodyWidth;
+
+  /// Optional custom size for the hotspot
+  final Size? hotspotSize;
+
+  /// Custom offset for the hotspot center
+  final Offset hotspotOffset;
+
+  /// BoxDecoration for border of callout body
+  final BoxDecoration? boxDecoration;
+// Determines if the target is above the center of the paint bounds
+  bool get targetIsAboveCenter {
+    final positioningResult = _positioningContext.calculatePositioning();
+    return positioningResult.isAboveCenter;
   }
 
-// Helper method to determine if the device is a tablet
-  bool _isTablet(Size screenSize) {
-    // This is a common approach, but you might want to fine-tune the logic
-    final double devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final double width = screenSize.width / devicePixelRatio;
-    final double height = screenSize.height / devicePixelRatio;
+  /// Advanced hotspot bounds calculation
+  Rect get hotspotBounds {
+    final positioningResult = _positioningContext.calculatePositioning();
+    final adjustmentFactor = positioningResult.adjustmentFactor;
 
-    // Typical tablet screen size threshold
-    return width >= 600 || height >= 600;
-  }
-
-// Helper method to detect if the device has a notch
-  bool _hasNotch(BuildContext context) {
-    final MediaQueryData mediaQuery = MediaQuery.of(context);
-
-    // Check for top padding (typically indicates a notch)
-    return mediaQuery.padding.top > 20;
-  }
-
-  Rect get tailBounds {
-    final inset = (hotspotPadding - tailInsets).inflateRect(targetBounds);
-    Offset tailCenter;
-
-    if (targetIsAboveCenter) {
-      tailCenter = inset.bottomCenter.translate(
-        hotspotOffset.dx,
-        tailSize.height,
+    if (hotspotSize != null) {
+      return hotspotPadding.inflateRect(
+        Rect.fromCenter(
+          center: targetBounds.center.translate(
+            hotspotOffset.dx * adjustmentFactor,
+            hotspotOffset.dy * adjustmentFactor,
+          ),
+          width: hotspotSize!.width * adjustmentFactor,
+          height: hotspotSize!.height * adjustmentFactor,
+        ),
       );
     } else {
-      tailCenter = inset.topCenter.translate(
-        hotspotOffset.dx,
-        -tailSize.height,
-      );
+      return hotspotPadding.inflateRect(targetBounds
+          .shift(hotspotOffset.scale(adjustmentFactor, adjustmentFactor)));
     }
+  }
+
+  /// Enhanced tail bounds calculation
+  Rect get tailBounds {
+    final positioningResult = _positioningContext.calculatePositioning();
+
+    // Calculate the tail point inset
+    final inset = (hotspotPadding - tailInsets).inflateRect(targetBounds);
+
+    // Determine tail position based on positioning result
+    final tailCenter = positioningResult.isAboveCenter
+        ? inset.bottomCenter.translate(0, tailSize.height)
+        : inset.topCenter.translate(0, -tailSize.height);
+
+    // Apply device-specific adjustment
+    final adjustmentFactor = positioningResult.adjustmentFactor;
 
     return Rect.fromCenter(
       center: tailCenter,
-      width: tailSize.width,
-      height: tailSize.height * 2,
+      width: tailSize.width * adjustmentFactor,
+      height: tailSize.height * adjustmentFactor * 2,
     );
   }
 
+  /// Advanced body container bounds calculation
   Rect get bodyContainerBounds {
+    final positioningResult = _positioningContext.calculatePositioning();
+    final adjustmentFactor = positioningResult.adjustmentFactor;
+
+    // Calculate deflated paint bounds
+    final deflatedPaintBounds = bodyMargin.deflateRect(paintBounds);
+
+    // Calculate body container dimensions
+    final bodyContainerHeight = paintBounds.height * adjustmentFactor;
+    final adjustedBodyWidth = bodyWidth * adjustmentFactor;
+
+    // Create unpositioned body rect
     final unpositionedBodyRect = Rect.fromCenter(
       center: tailBounds.center,
-      width: bodyWidth,
+      width: adjustedBodyWidth,
       height: bodyContainerHeight,
-    ).translateToFitX(_deflatedPaintBounds);
+    ).translateToFitX(deflatedPaintBounds);
 
-    return targetIsAboveCenter
-        ? unpositionedBodyRect.translate(0, bodyContainerHeight / 2)
-        : unpositionedBodyRect.translate(0, -bodyContainerHeight / 2);
+    // Vertical positioning based on target position
+    if (positioningResult.isAboveCenter) {
+      return unpositionedBodyRect.translate(0, bodyContainerHeight / 2);
+    } else {
+      return unpositionedBodyRect.translate(0, -bodyContainerHeight / 2);
+    }
   }
 
-  double get bodyContainerHeight => paintBounds.height;
+  // Calculates the dynamic body container height
+  double get bodyContainerHeight {
+    final positioningResult = _positioningContext.calculatePositioning();
+    final adjustmentFactor = positioningResult.adjustmentFactor;
+
+    // Base height calculation
+    double baseHeight = paintBounds.height * adjustmentFactor;
+
+    // Apply device-specific height adjustments
+    switch (_positioningContext.deviceType) {
+      case DeviceType.tablet:
+        // Slightly taller for tablets
+        baseHeight *= 1.1;
+        break;
+      case DeviceType.notchedDevice:
+        // Adjust for devices with notches
+        baseHeight -= _positioningContext.systemPadding.top;
+        break;
+      case DeviceType.phone:
+      default:
+        break;
+    }
+
+    // Orientation-based height adjustment
+    if (_positioningContext.orientation == Orientation.landscape) {
+      baseHeight *= 0.9; // Reduce height in landscape
+    }
+
+    // Ensure minimum and maximum height
+    return baseHeight.clamp(
+        paintBounds.height * 0.3, // Minimum 30% of paint bounds
+        paintBounds.height * 0.8 // Maximum 80% of paint bounds
+        );
+  }
+
+  /// Provides a proportional height calculation with custom scaling
+  double calculateProportionalHeight({
+    double minHeightFactor = 0.3,
+    double maxHeightFactor = 0.8,
+    double? customScaleFactor,
+  }) {
+    final positioningResult = _positioningContext.calculatePositioning();
+    final adjustmentFactor = positioningResult.adjustmentFactor;
+
+    // Base height calculation
+    double baseHeight = paintBounds.height * adjustmentFactor;
+
+    // Apply custom scaling if provided
+    if (customScaleFactor != null) {
+      baseHeight *= customScaleFactor;
+    }
+
+    // Device-specific adjustments
+    switch (_positioningContext.deviceType) {
+      case DeviceType.tablet:
+        baseHeight *= 1.1;
+        break;
+      case DeviceType.notchedDevice:
+        baseHeight -= _positioningContext.systemPadding.top;
+        break;
+      default:
+        break;
+    }
+
+    // Orientation adjustment
+    if (_positioningContext.orientation == Orientation.landscape) {
+      baseHeight *= 0.9;
+    }
+
+    // Constrain height
+    return baseHeight.clamp(paintBounds.height * minHeightFactor,
+        paintBounds.height * maxHeightFactor);
+  }
+
+  /// Comprehensive layout information
+  CalloutLayoutInfo getLayoutInfo() {
+    final positioningResult = _positioningContext.calculatePositioning();
+
+    return CalloutLayoutInfo(
+      hotspotBounds: hotspotBounds,
+      tailBounds: tailBounds,
+      bodyContainerBounds: bodyContainerBounds,
+      positioningResult: positioningResult,
+      deviceType: _positioningContext.deviceType,
+    );
+  }
 }
 
-extension on Rect {
-  Rect translateToFitX(Rect e) {
-    assert(width <= e.width,
-        'The parent Rect(width: ${e.width}) must be wider than this Rect(width:$width)');
+/// Comprehensive layout information container
+class CalloutLayoutInfo {
+  final Rect hotspotBounds;
+  final Rect tailBounds;
+  final Rect bodyContainerBounds;
+  final PositioningResult positioningResult;
+  final DeviceType deviceType;
 
-    if (e.right < right) {
-      return translate(-(e.right - right).abs(), 0);
-    } else if (e.left > left) {
-      return translate((e.left - left).abs(), 0);
-    } else {
+  CalloutLayoutInfo({
+    required this.hotspotBounds,
+    required this.tailBounds,
+    required this.bodyContainerBounds,
+    required this.positioningResult,
+    required this.deviceType,
+  });
+
+  /// Convenience method for debugging
+  @override
+  String toString() {
+    return '''
+    CalloutLayoutInfo:
+    - Hotspot Bounds: $hotspotBounds
+    - Tail Bounds: $tailBounds
+    - Body Container Bounds: $bodyContainerBounds
+    - Positioning: $positioningResult
+    - Device Type: $deviceType
+    ''';
+  }
+}
+
+/// Utility extension for rect translation
+extension RectTranslationExtension on Rect {
+  /// Translate this Rect horizontally to fit inside another Rect
+  Rect translateToFitX(Rect container) {
+    assert(width <= container.width,
+        'Container Rect must be wider than this Rect');
+
+    // Overhang on the right
+    if (container.right < right) {
+      return translate(-(container.right - right).abs(), 0);
+    }
+    // Overhang on the left
+    else if (container.left > left) {
+      return translate((container.left - left).abs(), 0);
+    }
+    // No overhang
+    else {
       return this;
     }
+  }
+}
+
+enum DeviceType { phone, tablet, notchedDevice }
+
+class CalloutPositioningContext {
+  final BuildContext context;
+  final Rect paintBounds;
+  final Rect targetBounds;
+
+  // Device-specific parameters
+  final DeviceType deviceType;
+  final Orientation orientation;
+  final double devicePixelRatio;
+  final EdgeInsets systemPadding;
+
+  CalloutPositioningContext({
+    required this.context,
+    required this.paintBounds,
+    required this.targetBounds,
+    DeviceType? deviceType,
+    Orientation? orientation,
+    double? devicePixelRatio,
+    EdgeInsets? systemPadding,
+  })  : deviceType = deviceType ?? _determineDeviceType(context),
+        orientation = orientation ?? MediaQuery.of(context).orientation,
+        devicePixelRatio =
+            devicePixelRatio ?? MediaQuery.of(context).devicePixelRatio,
+        systemPadding = systemPadding ?? MediaQuery.of(context).padding;
+
+  // Comprehensive device type determination
+  static DeviceType _determineDeviceType(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size;
+    final devicePixelRatio = mediaQuery.devicePixelRatio;
+
+    // Screen size calculation (accounting for pixel ratio)
+    final width = screenSize.width / devicePixelRatio;
+    final height = screenSize.height / devicePixelRatio;
+
+    // Notch detection
+    final topPadding = mediaQuery.padding.top;
+    final hasNotch = topPadding > 20; // Typical notch indicator
+
+    // Tablet detection (adjust thresholds as needed)
+    final isTablet = (width >= 600 || height >= 600);
+
+    if (hasNotch) return DeviceType.notchedDevice;
+    if (isTablet) return DeviceType.tablet;
+    return DeviceType.phone;
+  }
+
+  // Advanced positioning calculation
+  PositioningResult calculatePositioning() {
+    // Base midpoint calculation
+    double baseMidPoint = paintBounds.height / 2;
+    double adjustedMidPoint = _calculateAdjustedMidPoint(baseMidPoint);
+
+    // Tolerance calculation
+    final tolerance = adjustedMidPoint * 0.1;
+
+    // Determine vertical position
+    final isAboveCenter =
+        targetBounds.center.dy < (adjustedMidPoint + tolerance);
+
+    return PositioningResult(
+      isAboveCenter: isAboveCenter,
+      deviceType: deviceType,
+      midPointOffset: adjustedMidPoint,
+      adjustmentFactor: _calculateAdjustmentFactor(),
+    );
+  }
+
+  // Midpoint adjustment logic
+  double _calculateAdjustedMidPoint(double baseMidPoint) {
+    double adjustedMidPoint = baseMidPoint;
+
+    switch (deviceType) {
+      case DeviceType.tablet:
+        // Shift midpoint for tablets
+        adjustedMidPoint *= 1.1; // 10% adjustment
+        break;
+      case DeviceType.notchedDevice:
+        // Compensate for notch
+        adjustedMidPoint += systemPadding.top / devicePixelRatio;
+        break;
+      case DeviceType.phone:
+      default:
+        break;
+    }
+
+    // Orientation-based adjustments
+    if (orientation == Orientation.landscape) {
+      adjustedMidPoint *= 0.95; // Slight landscape adjustment
+    }
+
+    return adjustedMidPoint;
+  }
+
+  // Adjustment factor calculation
+  double _calculateAdjustmentFactor() {
+    switch (deviceType) {
+      case DeviceType.tablet:
+        return 1.1;
+      case DeviceType.notchedDevice:
+        return 1.05;
+      case DeviceType.phone:
+      default:
+        return 1.0;
+    }
+  }
+
+  // Advanced positioning strategy
+  Rect calculatePositionedRect({
+    required double width,
+    required double height,
+    required Offset offset,
+  }) {
+    final positioning = calculatePositioning();
+    final adjustmentFactor = positioning.adjustmentFactor;
+
+    // Base rect calculation
+    Rect baseRect = Rect.fromCenter(
+      center: targetBounds.center.translate(offset.dx, offset.dy),
+      width: width * adjustmentFactor,
+      height: height * adjustmentFactor,
+    );
+
+    // Vertical positioning adjustment
+    if (positioning.isAboveCenter) {
+      baseRect = baseRect.translate(0, -height * 0.5);
+    } else {
+      baseRect = baseRect.translate(0, height * 0.5);
+    }
+
+    return baseRect;
+  }
+}
+
+// Positioning result encapsulation
+class PositioningResult {
+  final bool isAboveCenter;
+  final DeviceType deviceType;
+  final double midPointOffset;
+  final double adjustmentFactor;
+
+  PositioningResult({
+    required this.isAboveCenter,
+    required this.deviceType,
+    required this.midPointOffset,
+    required this.adjustmentFactor,
+  });
+
+  // Convenience getters
+  bool get needsSpecialHandling => deviceType != DeviceType.phone;
+
+  // Debugging and logging
+  @override
+  String toString() {
+    return 'PositioningResult('
+        'isAboveCenter: $isAboveCenter, '
+        'deviceType: $deviceType, '
+        'midPointOffset: $midPointOffset, '
+        'adjustmentFactor: $adjustmentFactor)';
   }
 }

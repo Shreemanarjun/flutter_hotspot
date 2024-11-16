@@ -398,45 +398,46 @@ class HotspotProviderState extends State<HotspotProvider>
 
                       /// Absorb tap events so we don't dismiss when tapping on the callout body.
                       /// Without this, the tap event is passed through to the skrim GestureDetector
-                      child: ClipRRect(
+                      child: DecoratedBox(
+                        decoration: ShapeDecoration.fromBoxDecoration(
+                          currentTarget.widget.boxDecoration?.color == null
+                              ? BoxDecoration(
+                                  color: bg,
+                                )
+                              : currentTarget.widget.boxDecoration!,
+                        ),
+                        child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            decoration:
-                                currentTarget.widget.boxDecoration?.color ==
-                                        null
-                                    ? BoxDecoration(
-                                        color: bg,
-                                      )
-                                    : currentTarget.widget.boxDecoration,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                /// Callout body
-                                Padding(
-                                  padding: widget.bodyPadding,
-                                  child: AnimatedSize(
-                                    duration: widget.duration,
-                                    alignment: Alignment.topCenter,
-                                    curve: widget.curve,
-                                    child: currentTarget.widget.calloutBody,
-                                  ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              /// Callout body
+                              Padding(
+                                padding: widget.bodyPadding,
+                                child: AnimatedSize(
+                                  duration: widget.duration,
+                                  alignment: Alignment.topCenter,
+                                  curve: widget.curve,
+                                  child: currentTarget.widget.calloutBody,
                                 ),
+                              ),
 
-                                /// Callout controls
-                                actionBuilder(
-                                  context,
-                                  CalloutActionController(
-                                    dismiss: dismiss,
-                                    next: next,
-                                    previous: previous,
-                                    index: _index,
-                                    pages: currentFlow.length,
-                                    foregroundColor: fg,
-                                  ),
+                              /// Callout controls
+                              actionBuilder(
+                                context,
+                                CalloutActionController(
+                                  dismiss: dismiss,
+                                  next: next,
+                                  previous: previous,
+                                  index: _index,
+                                  pages: currentFlow.length,
+                                  foregroundColor: fg,
                                 ),
-                              ],
-                            ),
-                          )),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
