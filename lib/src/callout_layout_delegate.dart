@@ -73,9 +73,20 @@ class CalloutLayoutDelegate {
     // Calculate the tail point inset
     final inset = (hotspotPadding - tailInsets).inflateRect(targetBounds);
 
-    final tailCenter = targetIsAboveCenter
-        ? inset.bottomCenter.translate(0, tailSize.height)
-        : inset.topCenter.translate(0, -tailSize.height);
+    Offset tailCenter;
+    if (targetIsAboveCenter) {
+      // Tail pointing downwards (target is above center)
+      tailCenter = inset.bottomCenter.translate(
+          hotspotOffset.dx, // Consider horizontal offset
+          tailSize.height // Move down by tail height
+          );
+    } else {
+      // Tail pointing upwards (target is below center)
+      tailCenter = inset.topCenter.translate(
+          hotspotOffset.dx, // Consider horizontal offset
+          -tailSize.height // Move up by tail height
+          );
+    }
 
     return Rect.fromCenter(
         center: tailCenter, width: tailSize.width, height: tailSize.height * 2);
