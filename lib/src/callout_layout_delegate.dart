@@ -88,23 +88,25 @@ class CalloutLayoutDelegate {
 
   /// Enhanced tail bounds calculation
   Rect get tailBounds {
-    final positioningResult = _positioningContext.calculatePositioning();
-
-    // Calculate the tail point inset
     final inset = (hotspotPadding - tailInsets).inflateRect(targetBounds);
+    Offset tailCenter;
 
-    // Determine tail position based on positioning result
-    final tailCenter = positioningResult.isAboveCenter
-        ? inset.bottomCenter.translate(0, tailSize.height)
-        : inset.topCenter.translate(0, -tailSize.height);
-
-    // Apply device-specific adjustment
-    final adjustmentFactor = positioningResult.adjustmentFactor;
+    if (targetIsAboveCenter) {
+      tailCenter = inset.bottomCenter.translate(
+        hotspotOffset.dx,
+        tailSize.height,
+      );
+    } else {
+      tailCenter = inset.topCenter.translate(
+        hotspotOffset.dx,
+        -tailSize.height,
+      );
+    }
 
     return Rect.fromCenter(
       center: tailCenter,
-      width: tailSize.width * adjustmentFactor,
-      height: tailSize.height * adjustmentFactor * 2,
+      width: tailSize.width,
+      height: tailSize.height * 2,
     );
   }
 
